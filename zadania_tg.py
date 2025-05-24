@@ -1,6 +1,4 @@
-# ✅ Домашнее задание: реализация Telegram-бота с помощью библиотеки aiogram
-# Этот бот реализует функциональность из заданий 5–12 согласно учебному материалу.
-
+# @test_method2_programming_bot
 # Импорт всех необходимых модулей и библиотек
 import asyncio
 import random
@@ -18,9 +16,9 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.client.default import DefaultBotProperties
 
-from conf import token_tg  # Ваш токен бота из отдельного файла конфигурации
+from conf import token_tg  
 
-# Инициализация бота с HTML-разметкой
+# Инициализация бота 
 bot = Bot(token=token_tg, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 
@@ -41,7 +39,7 @@ class GeocodeState(StatesGroup):
 class PriceState(StatesGroup):
     active = State()
 
-# Утилита для построения клавиатур
+# клава
 
 def build_kb(*rows):
     builder = ReplyKeyboardBuilder()
@@ -119,7 +117,7 @@ async def set_timer(message: types.Message):
     await asyncio.sleep(seconds)
     await message.answer(f"⏰ {message.text} истекло")
 
-# Музей и навигация между залами
+# Музей 
 museum_rooms = {
     "вход": ("Добро пожаловать! Сдайте верхнюю одежду в гардероб.", ["Зал 1"]),
     "Зал 1": ("Зал древнего искусства.", ["Зал 2", "вход", "выход"]),
@@ -138,7 +136,7 @@ async def museum_nav(message: types.Message):
     await message.answer(desc, reply_markup=build_kb(options))
 
 
-# Викторина (из файла quiz.json)
+# Викторина (из файла quiz.json) (не работает)
 @dp.message(F.text == "❓ Викторина")
 async def start_quiz(message: types.Message, state: FSMContext):
     try:
@@ -173,7 +171,7 @@ async def check_answer(message: types.Message, state: FSMContext):
     await state.update_data(**data)
     await ask_question(message, state)
 
-# Геокодер
+# Геокодер ("город", "улица" "номер")
 @dp.message(F.text == "🗺️ Геокодер")
 async def geocoder_prompt(message: types.Message, state: FSMContext):
     await message.answer("Введите адрес:")
@@ -219,40 +217,6 @@ async def do_translate(message: types.Message, state: FSMContext):
             translated = result["responseData"]["translatedText"]
             await message.answer(f"Перевод: {translated}", reply_markup=main_menu_kb)
     await state.clear()
-
-# Поиск товара (предполагается quiz.json и парсинг)
-@dp.message(F.text == "💰 Поиск товара")
-async def search_price(message: types.Message, state: FSMContext):
-    await message.answer("Введите цену товара:")
-    await state.set_state(PriceState.active)
-
-@dp.message(PriceState.active)
-async def handle_price(message: types.Message, state: FSMContext):
-    try:
-        target = float(message.text)
-        items = await scrape_products()
-        best = min(items, key=lambda p: (abs(p['price'] - target), p['name']))
-        await message.answer_photo(best['image'], caption=f"{best['name']}\nЦена: ${best['price']}\nОписание: {best['description']}")
-    except Exception as e:
-        await message.answer(f"Ошибка: {e}")
-    await state.clear()
-
-async def scrape_products():
-    url_base = "https://scrapingclub.com"
-    results = []
-    async with aiohttp.ClientSession() as session:
-        for page in range(1, 4):
-            url = f"{url_base}/exercise/list_basic/?page={page}"
-            async with session.get(url) as resp:
-                soup = BeautifulSoup(await resp.text(), "html.parser")
-                cards = soup.select(".col-lg-4.col-md-6.mb-4")
-                for card in cards:
-                    name = card.select_one("h4 a").text.strip()
-                    price = float(card.select_one("h5").text.strip().replace("$", ""))
-                    desc = card.select_one(".card-text").text.strip()
-                    img = url_base + card.select_one("img")["src"]
-                    results.append({"name": name, "price": price, "description": desc, "image": img})
-    return results
 
 # Запуск бота
 async def main():
